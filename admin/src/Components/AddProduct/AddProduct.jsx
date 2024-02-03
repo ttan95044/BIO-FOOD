@@ -6,11 +6,11 @@ const AddProduct = () => {
 
   const [image, setImage] = useState(false);
   const [productDetails, setProductDetails] = useState({
-    name:"",
-    image:"",
-    category:"women",
-    new_price:"",
-    old_price:""
+    name: "",
+    image: "",
+    category: "women",
+    new_price: "",
+    old_price: ""
   });
 
   const imageHandler = (e) => {
@@ -18,40 +18,62 @@ const AddProduct = () => {
   }
 
   const changeHandler = (e) => {
-    setProductDetails({...productDetails})
+    setProductDetails({ ...productDetails, [e.target.name]: e.target.value })
+  }
+
+  const Add_Product = async () => {
+    console.log(productDetails);
+    let responseDate;
+    let product = productDetails;
+
+    let formData = new FormData();
+    formData.append('product',image);
+    
+    await fetch('http://localhost:4000/upload',{
+      method: 'POST',
+      headers:{
+        Accept:'application/json'
+      },
+      body:formData,
+    }).then((resp) => resp.json()).then((data) =>{responseDate=data});
+
+    if(responseDate.success){
+      product.image = responseDate.image_url;
+      console.log(product);
+    }
   }
 
   return (
     <div className='addproduct'>
       <div className="addproduct-itemfield">
         <p>Product title</p>
-        <input className='addproduct-itemfield-input' type="text" name='name' placeholder='Type here' />
+        <input value={productDetails.name} onChange={changeHandler} className='addproduct-itemfield-input' type="text" name='name' placeholder='Type here' />
       </div>
       <div className="addproduct-price">
         <div className="addproduct-itemfield">
           <p>Price</p>
-          <input className='addproduct-itemfield-input' type="text" name="old_price" placeholder='Type here' />
+          <input value={productDetails.old_price} onChange={changeHandler} className='addproduct-itemfield-input' type="text" name="old_price" placeholder='Type here' />
         </div>
         <div className="addproduct-itemfield">
           <p>Offer Price</p>
-          <input className='addproduct-itemfield-input' type="text" name="new_price" placeholder='Type here' />
+          <input value={productDetails.new_price} onChange={changeHandler} className='addproduct-itemfield-input' type="text" name="new_price" placeholder='Type here' />
         </div>
       </div>
       <div className="addproduct-itemfield">
         <p>Product Category</p>
-        <select name="cartegory" className='addproduct-selector'>
-          <option value="wonmen">Women</option>
+        <select value={productDetails.category} onChange={changeHandler} name="category" className='addproduct-selector'>
+          <option value="women">Women</option>
           <option value="men">Men</option>
           <option value="kid">Kid</option>
         </select>
       </div>
       <div className="addproduct-itemfield">
         <label htmlFor="file-input">
-          <img src={image?URL.createObjectURL(image):upload_area} className='addproduct-thumnail-img' alt="" />
+          <img src={image ? URL.createObjectURL(image) : upload_area} className='addproduct-thumnail-img' alt="" />
         </label>
         <input onChange={imageHandler} className='addproduct-itemfield-input' type="file" name='image' id='file-input' hidden />
       </div>
-      <button className='addproduct-btn'>ADD</button>
+      <button onClick={() => { Add_Product() }} className='addproduct-btn'>ADD</button>
     </div>
   )
 }
