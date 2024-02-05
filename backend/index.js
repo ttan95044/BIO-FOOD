@@ -85,8 +85,7 @@ app.post("/addproduct", async (req, res) => {
     let last_product_array = products.slice(-1);
     let last_product = last_product_array[0];
     id = last_product.id + 1;
-  } 
-  else {
+  } else {
     id = 1;
   }
   try {
@@ -122,7 +121,7 @@ app.post("/addproduct", async (req, res) => {
 });
 
 // Creating API for updating products
-app.post('/updateproduct', async (req, res) => {
+app.post("/updateproduct", async (req, res) => {
   try {
     const { id, name, image, category, new_price, old_price } = req.body;
 
@@ -136,7 +135,7 @@ app.post('/updateproduct', async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Product not found",
-        id: id
+        id: id,
       });
     }
 
@@ -144,42 +143,41 @@ app.post('/updateproduct', async (req, res) => {
     res.json({
       success: true,
       message: "Product updated successfully",
-      product: product
+      product: product,
     });
   } catch (error) {
     console.error("Error updating product:", error.message);
     res.status(500).json({
       success: false,
       message: "Error updating product",
-      error: error.message
+      error: error.message,
     });
   }
 });
 
-
 // creating API for deleting products
-app.post('/removeproduct', async (req, res) => {
+app.post("/removeproduct", async (req, res) => {
   try {
     const product = await Product.findOneAndDelete({ id: req.body.id });
     if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
-        id: req.body.id
+        id: req.body.id,
       });
     }
     console.log("Removed product:", product.name);
     res.json({
       success: true,
       message: "Product removed successfully",
-      name: product.name
+      name: product.name,
     });
   } catch (error) {
     console.error("Error removing product:", error.message);
     res.status(500).json({
       success: false,
       message: "Error removing product",
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -197,6 +195,88 @@ app.get("/allproducts", async (req, res) => {
       message: "Error getting products",
       error: error.message,
     });
+  }
+});
+
+// Shema creating for user model
+const Users = mongoose.model("Users", {
+  name: {
+    type: String,
+  },
+  email: {
+    type: String,
+    unique: true,
+  },
+  password: {
+    type: String,
+  },
+  cartData: {
+    type: Object,
+  },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Creating endpoint for registering users
+// Creating endpoint for registering users
+app.post("/signup", async (req, res) => {
+  // Thêm dấu / ở đầu route
+  const check = await Users.findOne({ email: req.body.email });
+  if (check) {
+    return res.status(400).json({
+      success: false,
+      message: "existing user found with same email address",
+    });
+  }
+  const cart = {};
+  for (let i = 0; i < 300; i++) {
+    cart[i] = 0;
+  }
+  const user = new Users({
+    name: req.body.name,
+    email: req.body.email,
+    password: req.body.password,
+    cartData: cart,
+  });
+
+  await user.save();
+
+  const data = {
+    user: {
+      id: user.id,
+    },
+  };
+
+  const token = jwt.sign(data, "secret_ecom");
+  res.json({
+    success: true,
+    token,
+  });
+});
+
+// Creating endpoint for login users
+app.post("/login", async (req, res) => {
+  const user = await Users.findOne({ email: req.body.email });
+  if (user) {
+    const passCompare = req.body.password === user.password;
+    if (passCompare) {
+      const data = {
+        user: {
+          id: user.id,
+        },
+      };
+      const token = jwt.sign(data, "secret_ecom");
+      res.json({
+        success: true,
+        token,
+      });
+    } else {
+      res.json({ success: false, error: "Wrong Password" });
+    }
+  } else {
+    res.json({ success: false, error: "Wrong email id" });
   }
 });
 
