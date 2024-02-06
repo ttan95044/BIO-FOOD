@@ -220,7 +220,6 @@ const Users = mongoose.model("Users", {
 });
 
 // Creating endpoint for registering users
-// Creating endpoint for registering users
 app.post("/signup", async (req, res) => {
   // Thêm dấu / ở đầu route
   const check = await Users.findOne({ email: req.body.email });
@@ -279,6 +278,106 @@ app.post("/login", async (req, res) => {
     res.json({ success: false, error: "Wrong email id" });
   }
 });
+
+// creating endpoint for newcollection data
+app.get("/newcollection", async (req, res) => {
+  let products = await Product.find({});
+  let newcollection = products.slice(1).slice(-8);
+  console.log("Newcollection fetched");
+  res.send(newcollection);
+});
+
+//creating endpoint for popular in women section
+app.get("/popularinwomen", async (req, res) => {
+  let products = await Product.find({ category: "women" });
+  let popular_in_women = products.slice(0, 4);
+  console.log("Popular in women fetched");
+  res.send(popular_in_women);
+});
+
+// creating middelware to fetch user
+const fetchUser = async (req, res, next) => {
+  const token = req.header("auth-token");
+  if (!token) {
+    return res.status(401).send({ error: "Please provide a valid auth token" });
+  }
+
+  try {
+    const data = jwt.verify(token, "secret_ecom");
+    req.user = data.user;
+    next();
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).send({ error: "Invalid auth token" });
+    } else if (error.name === 'TokenExpiredError') {
+      return res.status(401).send({ error: "Expired auth token" });
+    }
+    res.status(500).send({ error: "Internal Server Error" });
+  }
+};
+
+
+// creating endpoint for adding product in cartdata
+app.post("/addtocart", fetchUser, async (req, res) => {
+  console.log("Added", req.body.itemId);
+  try {
+    let userData = await Users.findOne({ _id: req.user.id });
+    if (!userData) {
+      return res.status(404).send("User not found");
+    }
+
+    // Tăng số lượng sản phẩm trong giỏ hàng
+    userData.cartData[req.body.itemId] = (userData.cartData[req.body.itemId] || 0) + 1;
+
+    // Cập nhật dữ liệu giỏ hàng trong cơ sở dữ liệu
+    await Users.findByIdAndUpdate(
+      { _id: req.user.id },
+      { cartData: userData.cartData }
+    );
+
+    res.send("Added to cart");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// creating endpoint for removing product from cartdata
+app.post('/removefromcart', fetchUser, async (req, res) => {
+  console.log("Removed", req.body.itemId);
+  try {
+    let userData = await Users.findOne({ _id: req.user.id });
+    if (!userData) {
+      return res.status(404).send("User not found");
+    }
+
+    // Kiểm tra nếu số lượng sản phẩm trong giỏ hàng lớn hơn 0 thì mới giảm đi
+    if (userData.cartData[req.body.itemId] > 0) {
+      // Trừ số lượng sản phẩm trong giỏ hàng
+      userData.cartData[req.body.itemId] -= 1;
+
+      // Cập nhật dữ liệu giỏ hàng trong cơ sở dữ liệu
+      await Users.findByIdAndUpdate(
+        { _id: req.user.id },
+        { cartData: userData.cartData }
+      );
+
+      res.send("Removed to cart");
+    } else {
+      res.status(400).send("No item to remove from cart");
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+//create endpoint to get cart data
+app.post('/getcart', fetchUser, async (req, res) => {
+  console.log("getcart");
+  let userData = await Users.findOne({ _id: req.user.id });
+  res.json(userData.cartData);
+})
 
 app.listen(port, (error) => {
   if (!error) {

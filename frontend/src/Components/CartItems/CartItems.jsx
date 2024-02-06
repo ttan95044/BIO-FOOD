@@ -4,7 +4,7 @@ import { ShopContext } from '../../Context/ShopContext';
 import remove_icon from '../Assets/cart_cross_icon.png';
 
 const CartItems = () => {
-    const {getTotalCartAmount, all_product, cartItems, removeFromCart } = useContext(ShopContext);
+    const { getTotalCartAmount, all_product, cartItems, removeFromCart } = useContext(ShopContext);
 
     // Kiểm tra xem giỏ hàng có sản phẩm không
     const isCartEmpty = Object.values(cartItems).every(quantity => quantity === 0);
@@ -26,8 +26,7 @@ const CartItems = () => {
             ) : (
                 all_product.map((e) => {
                     const quantityInCart = cartItems[e.id] || 0;
-
-                    if (quantityInCart > 0) {
+                    if (quantityInCart > 0 && e && e.new_price) {
                         return (
                             <div key={e.id}>
                                 <div className="cartitems-format cartitems-format-main">
@@ -50,7 +49,7 @@ const CartItems = () => {
                     <h1>Cart Total</h1>
                     <div>
                         <div className="cartitems-total-item">
-                            <p>Subtatal</p>
+                            <p>Subtotal</p>
                             <p>${getTotalCartAmount()}</p>
                         </div>
                         <hr />
@@ -69,7 +68,7 @@ const CartItems = () => {
                 <div className="cartitems-promocode">
                     <p>If you have a promo code, Enter it code</p>
                     <div className="cartitems-promobox">
-                        <input type="text" placeholder='promo code'/>
+                        <input type="text" placeholder='promo code' />
                         <button>Submit</button>
                     </div>
                 </div>
@@ -79,3 +78,4 @@ const CartItems = () => {
 }
 
 export default CartItems;
+
